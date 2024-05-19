@@ -1,16 +1,19 @@
 const inquirer = require('inquirer');
-const mysql = require('mysql2');
+const { Client } = require('pg');
 const cTable = require('console.table');
 
-const connection = mysql.createConnection({
+const client = new Client({
   host: 'localhost',
-  user: 'root',
-  password: 'your_password',
-  database: 'company'
+  user: 'postgres', // Your PostgreSQL username
+  password: '1234', // Your PostgreSQL password
+  database: 'company' // Your database name
 });
 
-connection.connect(err => {
-  if (err) throw err;
+client.connect(err => {
+  if (err) {
+    console.error('Error connecting to the database:', err);
+    return;
+  }
   console.log('Connected to the database.');
   startApp();
 });
@@ -55,7 +58,7 @@ const startApp = () => {
         updateEmployeeRole();
         break;
       case 'Exit':
-        connection.end();
+        client.end();
         break;
       default:
         console.log(`Invalid action: ${answer.action}`);
@@ -67,9 +70,9 @@ const startApp = () => {
 
 const viewDepartments = () => {
   const query = 'SELECT * FROM departments';
-  connection.query(query, (err, res) => {
+  client.query(query, (err, res) => {
     if (err) throw err;
-    console.table(res);
+    console.table(res.rows);
     startApp();
   });
 };
@@ -80,9 +83,9 @@ const viewRoles = () => {
     FROM roles
     INNER JOIN departments ON roles.department_id = departments.id
   `;
-  connection.query(query, (err, res) => {
+  client.query(query, (err, res) => {
     if (err) throw err;
-    console.table(res);
+    console.table(res.rows);
     startApp();
   });
 };
@@ -95,9 +98,9 @@ const viewEmployees = () => {
     LEFT JOIN departments ON roles.department_id = departments.id
     LEFT JOIN employees manager ON employees.manager_id = manager.id
   `;
-  connection.query(query, (err, res) => {
+  client.query(query, (err, res) => {
     if (err) throw err;
-    console.table(res);
+    console.table(res.rows);
     startApp();
   });
 };
@@ -109,8 +112,8 @@ const addDepartment = () => {
     message: 'Enter the name of the department:'
   })
   .then(answer => {
-    const query = 'INSERT INTO departments (name) VALUES (?)';
-    connection.query(query, answer.name, (err, res) => {
+    const query = 'INSERT INTO departments (name) VALUES ($1)';
+    client.query(query, [answer.name], (err, res) => {
       if (err) throw err;
       console.log(`Department ${answer.name} added successfully.`);
       startApp();
@@ -119,8 +122,9 @@ const addDepartment = () => {
 };
 
 const addRole = () => {
-  connection.query('SELECT * FROM departments', (err, departments) => {
+  client.query('SELECT * FROM departments', (err, res) => {
     if (err) throw err;
+    const departments = res.rows;
 
     inquirer.prompt([
       {
@@ -144,8 +148,8 @@ const addRole = () => {
       }
     ])
     .then(answer => {
-      const query = 'INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)';
-      connection.query(query, [answer.title, answer.salary, answer.department_id], (err, res) => {
+      const query = 'INSERT INTO roles (title, salary, department_id) VALUES ($1, $2, $3)';
+      client.query(query, [answer.title, answer.salary, answer.department_id], (err, res) => {
         if (err) throw err;
         console.log(`Role ${answer.title} added successfully.`);
         startApp();
@@ -155,10 +159,13 @@ const addRole = () => {
 };
 
 const addEmployee = () => {
-  connection.query('SELECT * FROM roles', (err, roles) => {
+  client.query('SELECT * FROM roles', (err, rolesRes) => {
     if (err) throw err;
-    connection.query('SELECT * FROM employees', (err, employees) => {
+    const roles = rolesRes.rows;
+    
+    client.query('SELECT * FROM employees', (err, employeesRes) => {
       if (err) throw err;
+      const employees = employeesRes.rows;
 
       inquirer.prompt([
         {
@@ -194,8 +201,8 @@ const addEmployee = () => {
         }
       ])
       .then(answer => {
-        const query = 'INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
-        connection.query(query, [answer.first_name, answer.last_name, answer.role_id, answer.manager_id], (err, res) => {
+        const query = 'INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)';
+        client.query(query, [answer.first_name, answer.last_name, answer.role_id, answer.manager_id], (err, res) => {
           if (err) throw err;
           console.log(`Employee ${answer.first_name} ${answer.last_name} added successfully.`);
           startApp();
@@ -206,10 +213,13 @@ const addEmployee = () => {
 };
 
 const updateEmployeeRole = () => {
-  connection.query('SELECT * FROM employees', (err, employees) => {
+  client.query('SELECT * FROM employees', (err, employeesRes) => {
     if (err) throw err;
-    connection.query('SELECT * FROM roles', (err, roles) => {
+    const employees = employeesRes.rows;
+
+    client.query('SELECT * FROM roles', (err, rolesRes) => {
       if (err) throw err;
+      const roles = rolesRes.rows;
 
       inquirer.prompt([
         {
@@ -232,10 +242,10 @@ const updateEmployeeRole = () => {
         }
       ])
       .then(answer => {
-        const query = 'UPDATE employees SET role_id = ? WHERE id = ?';
-        connection.query(query, [answer.role_id, answer.employee_id], (err, res) => {
+        const query = 'UPDATE employees SET role_id = $1 WHERE id = $2';
+        client.query(query, [answer.role_id, answer.employee_id], (err, res) => {
           if (err) throw err;
-          console.log(`Employee's role updated successfully.`);
+          console.log('Employee role updated successfully.');
           startApp();
         });
       });

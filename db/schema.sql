@@ -1,26 +1,23 @@
 CREATE DATABASE company;
 
-USE company;
+\c company;
 
 CREATE TABLE departments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(30) NOT NULL
 );
 
 CREATE TABLE roles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   title VARCHAR(30) NOT NULL,
-  salary DECIMAL(10, 2) NOT NULL,
-  department_id INT,
-  FOREIGN KEY (department_id) REFERENCES departments(id)
+  salary NUMERIC(10, 2) NOT NULL,
+  department_id INTEGER REFERENCES departments(id)
 );
 
 CREATE TABLE employees (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   first_name VARCHAR(30) NOT NULL,
   last_name VARCHAR(30) NOT NULL,
-  role_id INT,
-  manager_id INT,
-  FOREIGN KEY (role_id) REFERENCES roles(id),
-  FOREIGN KEY (manager_id) REFERENCES employees(id)
+  role_id INTEGER REFERENCES roles(id),
+  manager_id INTEGER REFERENCES employees(id)
 );

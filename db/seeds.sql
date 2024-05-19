@@ -1,5 +1,3 @@
-USE company;
-
 INSERT INTO departments (name)
 VALUES
   ('Engineering'),
