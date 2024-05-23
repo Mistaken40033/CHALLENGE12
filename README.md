@@ -3,6 +3,7 @@
 
 ## Description
 SQL CHALLENGE: Employee Tracker
+![Employee Tracker](image.png)
 
 ## Table of Contents
 - [Installation](#installation)
