@@ -1,23 +1,22 @@
-CREATE DATABASE company;
-
-\c company;
-
-CREATE TABLE departments (
+-- Create department table
+CREATE TABLE department (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(30) NOT NULL
+  name VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE roles (
+-- Create role table
+CREATE TABLE role (
   id SERIAL PRIMARY KEY,
-  title VARCHAR(30) NOT NULL,
-  salary NUMERIC(10, 2) NOT NULL,
-  department_id INTEGER REFERENCES departments(id)
+  title VARCHAR(50) NOT NULL,
+  salary DECIMAL NOT NULL,
+  department_id INT REFERENCES department(id)
 );
 
-CREATE TABLE employees (
+-- Create employee table
+CREATE TABLE employee (
   id SERIAL PRIMARY KEY,
-  first_name VARCHAR(30) NOT NULL,
-  last_name VARCHAR(30) NOT NULL,
-  role_id INTEGER REFERENCES roles(id),
-  manager_id INTEGER REFERENCES employees(id)
+  first_name VARCHAR(50) NOT NULL,
+  last_name VARCHAR(50) NOT NULL,
+  role_id INT REFERENCES role(id),
+  manager_id INT REFERENCES employee(id)
 );
